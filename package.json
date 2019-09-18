@@ -1,0 +1,21 @@
+{
+  "name": "tourist-app",
+  "description": "A app that lets you accomulate rewards as you explore the city of brasilia.",
+  "version": "0.1.1",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "dotenv": "^5.0.1",
+    "express": "^4.16.4",
+    "mssql": "^5.1.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">= 6.9.x",
+    "npm": "> 3.10.x"
+  }
+}
