@@ -25,6 +25,30 @@ function deleteLocais(req, res){
   });
 }
 
+function getAvailableLocais(req, res){
+  const user = req.query.user;
+  
+  mysql.createConnection(settings)
+  .then((pool) => {
+    connection = pool;
+    return connection.query("SELECT idLocal, nome, dataIncluao FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal != C.idLocal WHERE TbUsuario = x AND TIMESTAMPDIFF(MINUTE, C.dataCadastro, NOW()) <= 10");
+  })
+  .then((rows) => {
+    let info = [];
+
+    for(let i = 0; i < rows.length; i++){
+      info[i] = {
+        id: rows[i].idLocal,
+        nome: rows[i].nome,
+        dataIncluao: rows[i].dataIncluao
+      };
+    }
+    
+    res.writeHead(200, {"Content-Type": "application/json"});
+    res.end(JSON.stringify({"info": info}));
+  });
+}
+
 function getLocais(req, res){
   mysql.createConnection(settings)
   .then((pool) => {
@@ -48,6 +72,74 @@ function getLocais(req, res){
     
     res.writeHead(200, {"Content-Type": "application/json"});
     res.end(JSON.stringify({"info": info_locais}));
+  });
+}
+
+function getNewLocais(req, res){
+  const user = req.query.user;
+  
+  mysql.createConnection(settings)
+  .then((pool) => {
+    connection = pool;
+    return connection.query("SELECT idLocal, nome FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal != C.idLocal WHERE TbUsuario = x AND A.dataCadastro <= B.dataCadastro");
+  })
+  .then((rows) => {
+    let info = [];
+    
+    for(let i = 0; i < rows.length; i++){
+      info[i] = {
+        id: rows[i].idLocal,
+        nome: rows[i].nome
+      };
+    }
+    
+    res.writeHead(200, {"Content-Type": "application/json"});
+    res.end(JSON.stringify({"info": info}));
+  });
+}
+
+function getUser(req, res){
+  const user = req.query.user;
+  let info = {};
+  
+  mysql.createConnection(settings)
+  .then((pool) => {
+    connection = pool;
+    return connection.query(`SELECT
+  A.idUsuario AS 'id',
+	A.nome,
+  COUNT(C.pontos) AS 'pontos',
+	COUNT(C.idLocal) AS 'locaisDiferentes',
+	  FROM TbUsuario A
+	  JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario
+	  JOIN TbLocal C ON B.idLocal = C.idLocal
+      WHERE idUsuario = ${user};`);
+  })
+  .then((rows) => {
+    info["id"]: rows[0].id;
+    info["nome"]: rows[0].nome;
+    info["pontos"]: rows[0].pontos;
+    info["locaisDiferentes"]: rows[0].locaisDiferentes;
+    
+    return connection.query(`SELECT
+  nome AS 'ultimoLocal',
+  pontos AS 'ultimoPonto',
+  DAY(B.dataIncluao) AS 'ultimoDia',
+  TIMESTAMPDIFF(DAY, DAY(B.dataIncluao), NOW()) AS 'diasAtras',
+    FROM TbUsuario A
+      JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario
+      JOIN TbLocal C ON B.idLocal = C.idLocal
+        WHERE idUsuario = ${user}
+          ORDER BY B.dataIncluao DESC LIMIT 1;`);
+  })
+  .then((rows) => {
+      info["ultimoLocal"]: rows[0].ultimoLocal;
+      info["ultimoPonto"]: rows[0].ultimoPonto;
+      info["ultimoDia"]: rows[0].ultimoDia;
+      info["diasAtras"]: `Visitado há ${rows[0].diasAtras} dia(s) atrás`;
+    
+    res.writeHead(200, {"Content-Type": "application/json"});
+    res.end(JSON.stringify({"info": info}));
   });
 }
 
@@ -132,8 +224,13 @@ function hasher(plainText=""){
 }
 
 module.exports = {
+  deleteLocais: deleteLocais,
+  getAvailableLocais: getAvailableLocais,
+  getNewLocais: getNewLocais,
+  getUser: getUser,
   getLocais: getLocais,
   login: login,
   setLocais: setLocais,
+  setUser: setUser,
   updateLocais: updateLocais
 };
