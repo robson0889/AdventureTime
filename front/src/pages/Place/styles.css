@@ -41,3 +41,20 @@ ul.place-list li span{
   .content button.btn-remove:hover {
     background: #f00;
   }
+
+  .content button.btn-new {
+    border: 0;
+    border-radius: 2px;
+    width: 100%;
+    height: 40px;
+    padding: 0 20px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #33f;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  .content button.btn-new:hover {
+    background: #00f;
+  }

@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
 
-export default function Login() {
+export default function Login({ history }) {
     const [email, setEmail] = useState('');
-    const [pass, setPass] = useState('');
+    const [password, setPassword] = useState('');
 
     async function handleSubmit(event) {
         event.preventDefault();
-        console.log(await api.post('/login', {email, pass}));
+        const user =  {email, password}
+        const response = await api.post('/login', user);
+
+        const { id, level } = response.data;
+
+        localStorage.setItem('user', id);
+        localStorage.setItem('level', level);
+
+        history.push('/locais');
     }
 
     return (
         <>
             <form onSubmit={handleSubmit}>
-            <label htmlFor="email"> Email* </label>         
+            <label htmlFor="email"> EMAIL </label>         
             <input 
                 id="email"
                 type="email"
@@ -22,17 +30,16 @@ export default function Login() {
                 onChange={event => setEmail(event.target.value)}
             />
 
-            <label htmlFor="pass"> Password* </label>         
+            <label htmlFor="password"> SENHA </label>         
             <input 
-                id="pass"
+                id="password"
                 type="password"
-                placeholder="Pass"
-                value={pass}
-                onChange={event => setPass(event.target.value)} 
+                placeholder="Senha"
+                value={password}
+                onChange={event => setPassword(event.target.value)} 
             />
             <button className="btn" type="submit">Login</button>
-            <p>Don't remember your pass? Recover</p>
-            <p>No registration? Register here</p>
+            <p>Não é cadastrado? Registre-se</p>
             </form>
         </>
     );

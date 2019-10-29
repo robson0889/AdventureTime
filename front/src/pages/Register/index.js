@@ -22,45 +22,46 @@ export default function Register({ history }) {
         };
 
         (password !== confirmpass)? 
-            alert('pass diferentes')
+            alert('senhas diferentes')
             : api.post('/user', user);
           
+        history.push('/');
     }
 
     return (
         <>
             <form onSubmit={handleSubmit}>
-                <label htmlFor="firstname"> FirstName* </label>         
+                <label htmlFor="firstname"> Nome </label>         
                 <input 
                     id="firstname"
                     type="text"
-                    placeholder="Name"
+                    placeholder="Nome"
                     value={firstname}
                     required={t}
                     onChange={event => setFirstName(event.target.value)}
                 />
             
-                <label htmlFor="lastname"> LastName* </label>         
+                <label htmlFor="lastname"> Sobrenome </label>         
                 <input 
                     id="lastname"
                     type="text"
-                    placeholder="LastName"
+                    placeholder="Sobrenome"
                     value={lastname}
                     required={t}
                     onChange={event => setLastName(event.target.value)}
                 />
 
-                <label htmlFor="birth"> Birth* </label>         
+                <label htmlFor="birth"> Data de Nascimento </label>         
                 <input 
                     id="birth"
                     type="date"
-                    placeholder="Birth"
+                    placeholder="Data de nascimento"
                     value={birth}
                     required={t}
                     onChange={event => setBirth(event.target.value)}
                 />
 
-                <label htmlFor="email"> Email* </label>         
+                <label htmlFor="email"> Email </label>         
                 <input 
                     id="email"
                     type="email"
@@ -70,20 +71,20 @@ export default function Register({ history }) {
                     onChange={event => setEmail(event.target.value)}
                 />
 
-                <label htmlFor="password"> Password* </label>         
+                <label htmlFor="password"> Senha </label>         
                 <input 
                     id="password"
                     type="password"
-                    placeholder="Pass"
+                    placeholder="Senha"
                     value={password}
                     required={t}
                     onChange={event => setPass(event.target.value)} 
                 />
-                <label htmlFor="confirmapass">Confirm Password* </label>         
+                <label htmlFor="confirmapass">Senha* </label>         
                 <input 
                     id="confirmpass"
                     type="password"
-                    placeholder="Confirm Pass"
+                    placeholder="Confirma senha"
                     value={confirmpass}
                     required={t}
                     onChange={event => setConfirmpass(event.target.value)} 
