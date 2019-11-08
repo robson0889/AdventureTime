@@ -14,6 +14,8 @@ app.get("/user", (req, res) => api.getUser(req. res));
 app.post("/login", (req, res) => api.login(req, res));
 app.put("/user", (req, res) => api.setUser(req, res));
 
+app.post("/checkin", (req, res) => api.checkin(req, res));
+
 app.delete("/locais", (req, res) => api.deleteLocais(req, res));
 app.get("/locais", (req, res) => api.getLocais(req, res));
 app.get("/locais/available", (req, res) => api.getAvailableLocais(req, res));

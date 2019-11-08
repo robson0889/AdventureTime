@@ -10,6 +10,75 @@ const settings = {
   database: process.env.DB_NAME
 };
 
+async function checkin(req, res){
+  const checkin_time = process.env.CHECKIN_TIME;
+  const checkin_peri = process.env.CHECKIN_PERIOD;
+  const checkin_dist = process.env.CHECKIN_DISTANCE_KM;
+
+  const user = {
+    id: req.body.user,
+    lat: req.body.lat,
+    lon: req.body.lon
+  };
+  
+  const local = req.body.local;
+  
+  connection = await mysql.createConnection(settings);
+  
+  const local_info = await connection.query(`SELECT latitude, longitude FROM TbLocal WHERE idLocal = ${local}`);
+  
+  /* User too far */
+  if(checkin_dist < getDistanceFromLatLonInKm(local_info[i].latitude, local_info[i].longitude, user.lat, user.lon)){
+    res.writeHead(401, {"Content-Type": "application/json"});
+    res.end(JSON.stringify({"msg": "Usuário não está proximo o suficiente para realizar o checkin."}));
+    return null;
+  }
+  
+  /* TIMESTAMPDIFF is used to get whenever there was a
+     checkin in the given time.
+     the checkin_info const will be null (or an empty array,
+     I don't remember right now) if there wasn't any,
+     if there wasn't any recent checkin then proceed
+     with the algorith.
+  */
+  const checkin_info = await connection.query(`SELECT * FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal = C.idLocal WHERE A.idUsuario = ${user.id} AND C.idLocal = ${local} AND TIMESTAMPDIFF(${checkin_peri}, B.dataIncluao, NOW()) <= ${checkin_time}`);
+  
+  /* There was a checkin recently */
+  if(checkin_info.length > 0){
+    res.writeHead(401, {"Content-Type": "application/json"});
+    res.end(JSON.stringify({"msg": "Já houve um checkin, por favor aguarde o cooldown."}));
+    return null;
+  }
+  
+  /* There is, in theory, no need to alocate then, but it's neat
+     if you want to be really sure the insert worked.
+  */
+  const insert_result = await connection.query(`INSERT INTO TbUsuarioLocal (dataIncluao, idUsuario, idLocal) VALUES (NOW(), ${user.id}^, ${local})`);
+  
+  /* if insert_result.all_good ...*/
+  res.writeHead(200, {"Content-Type": "application/json"});
+  res.end(JSON.stringify({"msg": "Checkin realizado com sucesso!"}));
+}
+
+/* Further reading: https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates*/
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);  // deg2rad below
+  var dLon = deg2rad(lon2-lon1); 
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
+
 function deleteLocais(req, res){
   const id = req.query.id;
   mysql.createConnection(settings)
@@ -224,6 +293,7 @@ function hasher(plainText=""){
 }
 
 module.exports = {
+  checkin: checkin,
   deleteLocais: deleteLocais,
   getAvailableLocais: getAvailableLocais,
   getNewLocais: getNewLocais,
