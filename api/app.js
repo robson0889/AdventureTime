@@ -3,14 +3,19 @@
 var express = require('express'); // app server
 var bodyParser = require('body-parser'); // parser for post requests
 
+const cors = require('cors');
+
+
 var app = express();
+app.use(cors());
+
 const api = require("./api.js");
 
 // Bootstrap application settings
 app.use(express.static('./public')); // load UI from public folder
 app.use(bodyParser.json());
 
-app.get("/user", (req, res) => api.getUser(req. res));
+app.get("/user", (req, res) => api.getUser(req, res));
 app.post("/login", (req, res) => api.login(req, res));
 app.put("/user", (req, res) => api.setUser(req, res));
 

@@ -42,7 +42,7 @@ async function checkin(req, res){
      if there wasn't any recent checkin then proceed
      with the algorith.
     */
-    const checkin_info = await connection.query(`SELECT * FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal = C.idLocal WHERE A.idUsuario = ${user.id} AND C.idLocal = ${local} AND TIMESTAMPDIFF(${checkin_peri}, B.dataIncluao, NOW()) <= ${checkin_time}`);
+    const checkin_info = await connection.query(`SELECT * FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal = C.idLocal WHERE A.idUsuario = ${user.id} AND C.idLocal = ${local} AND TIMESTAMPDIFF(${checkin_peri}, B.dataInclusao, NOW()) <= ${checkin_time}`);
   
     /* There was a checkin recently */
     if(checkin_info.length > 0){
@@ -54,7 +54,7 @@ async function checkin(req, res){
     /* There is, in theory, no need to alocate then, but it's neat
      if you want to be really sure the insert worked.
     */
-    const insert_result = await connection.query(`INSERT INTO TbUsuarioLocal (dataIncluao, idUsuario, idLocal) VALUES (NOW(), ${user.id}^, ${local})`);
+    const insert_result = await connection.query(`INSERT INTO TbUsuarioLocal (dataInclusao, idUsuario, idLocal) VALUES (NOW(), ${user.id}^, ${local})`);
   
     /* if insert_result.all_good ...*/
     res.writeHead(200, {"Content-Type": "application/json"});
@@ -111,7 +111,7 @@ async function getAvailableLocais(req, res){
   
     connection = await mysql.createConnection(settings)
 
-    const rows = await connection.query(`SELECT idLocal, nome, dataIncluao FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal != C.idLocal WHERE A.idUsuario = ${user} AND TIMESTAMPDIFF(${checkin_peri}, C.dataCadastro, NOW()) <= ${checkin_time}`);
+    const rows = await connection.query(`SELECT idLocal, nome, dataInclusao FROM TbUsuario A JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario JOIN TbLocal C ON B.idLocal != C.idLocal WHERE A.idUsuario = ${user} AND TIMESTAMPDIFF(${checkin_peri}, C.dataCadastro, NOW()) <= ${checkin_time}`);
 
     let info = [];
 
@@ -119,7 +119,7 @@ async function getAvailableLocais(req, res){
       info[i] = {
         id: rows[i].idLocal,
         nome: rows[i].nome,
-        dataIncluao: rows[i].dataIncluao
+        dataInclusao: rows[i].dataInclusao
       };
     }
     
@@ -199,35 +199,42 @@ async function getUser(req, res){
 
     const rows_usuario = await connection.query(`SELECT
   A.idUsuario AS 'id',
-	A.nome,
-  COUNT(C.pontos) AS 'pontos',
-	COUNT(C.idLocal) AS 'locaisDiferentes',
+	A.nome
 	  FROM TbUsuario A
-	  JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario
-	  JOIN TbLocal C ON B.idLocal = C.idLocal
-      WHERE idUsuario = ${user};`);
+      WHERE A.idUsuario = ${user};`);
   
     info["id"] = rows_usuario[0].id;
     info["nome"] = rows_usuario[0].nome;
-    info["pontos"] = rows_usuario[0].pontos;
-    info["locaisDiferentes"] = rows_usuario[0].locaisDiferentes;
     
     const rows_local = await connection.query(`SELECT
-  nome AS 'ultimoLocal',
-  pontos AS 'ultimoPonto',
-  DAY(B.dataIncluao) AS 'ultimoDia',
-  TIMESTAMPDIFF(DAY, DAY(B.dataIncluao), NOW()) AS 'diasAtras',
+  C.nome AS 'ultimoLocal',
+  C.pontos AS 'ultimoPonto',
+  DAY(B.dataInclusao) AS 'ultimoDia',
+  TIMESTAMPDIFF(DAY, DAY(B.dataInclusao), NOW()) AS 'diasAtras',
+  COUNT(C.pontos) AS 'pontos',
+	COUNT(C.idLocal) AS 'locaisDiferentes'
     FROM TbUsuario A
       JOIN TbUsuarioLocal B ON A.idUsuario = B.idUsuario
       JOIN TbLocal C ON B.idLocal = C.idLocal
-        WHERE idUsuario = ${user}
-          ORDER BY B.dataIncluao DESC LIMIT 1;`);
-  })
-  .then((rows) => {
+        WHERE A.idUsuario = ${user}
+          ORDER BY B.dataInclusao DESC LIMIT 1;`);
+    
+    if(rows_local.length > 0){
       info["ultimoLocal"] = rows_local[0].ultimoLocal;
+      info["pontos"] = rows_local[0].pontos;
+      info["locaisDiferentes"] = rows_local[0].locaisDiferentes;
       info["ultimoPonto"] = rows_local[0].ultimoPonto;
       info["ultimoDia"] = rows_local[0].ultimoDia;
       info["diasAtras"] = `Visitado há ${rows_local[0].diasAtras} dia(s) atrás`;
+    }
+    else{
+      info["ultimoLocal"] = "";
+      info["ultimoPonto"] = "";
+      info["pontos"] = "";
+      info["locaisDiferentes"] = "";
+      info["ultimoDia"] = "";
+      info["diasAtras"] = "";
+    }
     
     res.writeHead(200, {"Content-Type": "application/json"});
     res.end(JSON.stringify({"info": info}));
@@ -246,11 +253,11 @@ async function login(req, res){
   
     connection = await mysql.createConnection(settings)
 
-    const rows = await connection.query(`SELECT senha, idUsuario AS 'id' FROM TbUsuario WHERE email = ${user}`);
+    const rows = await connection.query(`SELECT senha, idUsuario AS 'id' FROM TbUsuario WHERE email = '${user}'`);
 
     const isLogged = (hasher(pass) === rows[0].senha);
     const statusToSend = isLogged ? 200 : 403;
-	const idToSend: isLogged ? rows[0].id : 0;
+	const idToSend = isLogged ? rows[0].id : 0;
 
 	res.writeHead(statusToSend, {"Content-Type": "application/json"});
     res.end(JSON.stringify({"isLogged": isLogged, "id": idToSend}));
